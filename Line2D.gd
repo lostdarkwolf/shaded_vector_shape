@@ -32,11 +32,11 @@ onready var match_line = get_node("match_line") # match line
 onready var draw_line_main = Line2D.new() # main line
 onready var draw_line_match = Line2D.new() # match line
 
-# init variables
-var CURVE_COUNT = (get_point_count()-1)/3 # main line
-var LINE_COUNT_MATCH # match line
-# NOTE: If match_line_curve_mode is true, then LINE_COUNT_MATCH will count curves, not lines as implied.
-var POSITION_OFFSET_MATCH # match line
+# init variables 
+var curve_count = (get_point_count()-1)/3 # main line
+var line_count_match # match line
+# NOTE: If match_line_curve_mode is true, then line_count_match will count curves, not lines as implied.
+var position_offset_match # match line
 
 var primitive_points_array # main line AND match line
 var primitive_colors_array # main line AND match line
@@ -45,50 +45,51 @@ var t2 = 0 # stores a value conversion from the entire line, to a single cuve.
 var linear_middle # stores point for bezier transition from the second point to the third point (out of 4 points)
 var current_point_index # stores current point index for building lines
 var current_position # stores the current position for building lines
+var t_segment # stores the shape's segment size as a value from 0 to 1
 
 # CUSTOMIZATIONS
-# When and if this node is duplicated, dont forget to make it's script unique.
-# - If you dont, changes made below will also happen to all non-unique duplicautes.
 # NOTE: There is 18 digits of decimal precision. (Godot 3.2.2)
-var match_line_curve_mode = true # If true, match line will use bezier curves. Otherwise, the match line will be linear. (only the match line has this kind of switch)
-var T_SEGMENT = 1/ float(30*CURVE_COUNT) # segment size for match line AND main line. 0.1 means 10 segments for the whole shape.
-# Replace the number "30" above to define the number of segments per curve.
+export(bool) var match_line_curve_mode = true # If true, match line will use bezier curves. Otherwise, the match line will be linear. (only the match line has this kind of switch)
+export(int) var segments_per_curve = 30 # happens for the match line AND main line.
+# segments_per_curve needs to be at least 6
 
 # polygon colors (customizations)
-var polygon_main_color_start = ColorN("green")
-var polygon_main_color_end = ColorN("green")
-var polygon_match_color_start = ColorN("aquamarine")
-var polygon_match_color_end = ColorN("aquamarine")
+export(Color) var polygon_main_color_start = Color.red
+export(Color) var polygon_main_color_end = Color.yellow
+export(Color) var polygon_match_color_start = Color.lime
+export(Color) var polygon_match_color_end = Color.aqua
 
 # main draw line details (customizations)
-var line_main_color_start = ColorN("darkgreen")
-var line_main_color_end = ColorN("darkgreen")
-var line_main_width_start = float(10)
-var line_main_width_end = float(10)
+export(Color) var line_main_color_start = Color.blue
+export(Color) var line_main_color_end = Color.fuchsia
+export(float) var line_main_width_start = 2
+export(float) var line_main_width_end = 10
 
 # match draw line details (customizations)
-var line_match_color_start = ColorN("blue")
-var line_match_color_end = ColorN("fuchsia")
-var line_match_width_start = float(10)
-var line_match_width_end = float(2)
+export(Color) var line_match_color_start = Color.lightgray
+export(Color) var line_match_color_end = Color.darkgray
+export(float) var line_match_width_start = 10
+export(float) var line_match_width_end = 2
 
 func _ready():
 	# init (continued)
-	if match_line_curve_mode: LINE_COUNT_MATCH = floor((match_line.get_point_count()-1)/3) # main line # match line
-	else: LINE_COUNT_MATCH = match_line.get_point_count()-1 # match line
-	POSITION_OFFSET_MATCH=match_line.position
+	if match_line_curve_mode: line_count_match = floor((match_line.get_point_count()-1)/3) # main line # match line
+	else: line_count_match = match_line.get_point_count()-1 # match line
+	position_offset_match=match_line.position
+	t_segment = 1/ float(segments_per_curve*curve_count) # segment size for match line AND main line. 0.1 means 10 segments for the whole shape.
+
 
 func _draw():
 	add_child(draw_line_main)
 	add_child(draw_line_match)
 	
-	while t<1-T_SEGMENT:
+	while t<1-t_segment:
 		# reset primitive data
 		primitive_points_array = [] # main line AND match line (for polygon)
 		primitive_colors_array = [] # main line AND match line (for polygon)
 		
 		# main line for polygon
-		current_point_index = floor(t*CURVE_COUNT)*3
+		current_point_index = floor(t*curve_count)*3
 		linear_middle = lerp(get_point_position(current_point_index+1), get_point_position(current_point_index+2), t2)
 		current_position = lerp( lerp( lerp(get_point_position(current_point_index), get_point_position(current_point_index+1), t2) , linear_middle , t2) , lerp( linear_middle , lerp(get_point_position(current_point_index+2), get_point_position(current_point_index+3), t2)  , t2) , t2)
 		primitive_points_array.push_back(Vector2(current_position))
@@ -98,38 +99,38 @@ func _draw():
 		draw_line_main.add_point(Vector2(current_position))
 		
 		# match line for polygon
-		t2 = (t * LINE_COUNT_MATCH) - floor(t * LINE_COUNT_MATCH)
+		t2 = (t * line_count_match) - floor(t * line_count_match)
 		if match_line_curve_mode: 
-			current_point_index = floor(t*LINE_COUNT_MATCH)*3
+			current_point_index = floor(t*line_count_match)*3
 			linear_middle = lerp(match_line.get_point_position(current_point_index+1), match_line.get_point_position(current_point_index+2), t2)
 			current_position = lerp( lerp( lerp(match_line.get_point_position(current_point_index), match_line.get_point_position(current_point_index+1), t2) , linear_middle , t2) , lerp( linear_middle , lerp(match_line.get_point_position(current_point_index+2), match_line.get_point_position(current_point_index+3), t2)  , t2) , t2)
 		else:
-			current_point_index = floor(t*LINE_COUNT_MATCH)
+			current_point_index = floor(t*line_count_match)
 			current_position = lerp(match_line.get_point_position(current_point_index), match_line.get_point_position(current_point_index+1), t2)
-		primitive_points_array.push_back(Vector2(current_position+POSITION_OFFSET_MATCH))
+		primitive_points_array.push_back(Vector2(current_position+position_offset_match))
 		primitive_colors_array.push_back(lerp(polygon_match_color_start, polygon_match_color_end, t))
 		
 		# match draw line
-		draw_line_match.add_point(Vector2(current_position+POSITION_OFFSET_MATCH))
+		draw_line_match.add_point(Vector2(current_position+position_offset_match))
 		
 		# go to next segment
-		t += T_SEGMENT
-		t2 = (t * LINE_COUNT_MATCH) - floor(t * LINE_COUNT_MATCH)
+		t += t_segment
+		t2 = (t * line_count_match) - floor(t * line_count_match)
 		
 		# match line for polygon
 		if match_line_curve_mode: 
-			current_point_index = floor(t*LINE_COUNT_MATCH)*3
+			current_point_index = floor(t*line_count_match)*3
 			linear_middle = lerp(match_line.get_point_position(current_point_index+1), match_line.get_point_position(current_point_index+2), t2)
 			current_position = lerp( lerp( lerp(match_line.get_point_position(current_point_index), match_line.get_point_position(current_point_index+1), t2) , linear_middle , t2) , lerp( linear_middle , lerp(match_line.get_point_position(current_point_index+2), match_line.get_point_position(current_point_index+3), t2)  , t2) , t2)
 		else:
-			current_point_index = floor(t*LINE_COUNT_MATCH)
+			current_point_index = floor(t*line_count_match)
 			current_position = lerp(match_line.get_point_position(current_point_index), match_line.get_point_position(current_point_index+1), t2)
-		primitive_points_array.push_back(Vector2(current_position+POSITION_OFFSET_MATCH))
+		primitive_points_array.push_back(Vector2(current_position+position_offset_match))
 		primitive_colors_array.push_back(lerp(polygon_match_color_start, polygon_match_color_end, t))
 		
 		# main line for polygon
-		current_point_index = floor(t*CURVE_COUNT)*3
-		t2 = (t * CURVE_COUNT) - floor(t * CURVE_COUNT)
+		current_point_index = floor(t*curve_count)*3
+		t2 = (t * curve_count) - floor(t * curve_count)
 		linear_middle = lerp(get_point_position(current_point_index+1), get_point_position(current_point_index+2), t2)
 		current_position = lerp( lerp( lerp(get_point_position(current_point_index), get_point_position(current_point_index+1), t2) , linear_middle , t2) , lerp( linear_middle , lerp(get_point_position(current_point_index+2), get_point_position(current_point_index+3), t2)  , t2) , t2)
 		primitive_points_array.push_back(Vector2(current_position))
@@ -166,9 +167,9 @@ func _draw():
 			draw_line_main.width_curve.add_point(Vector2(1,0),0,0,0,0)
 	
 	# last point of the match draw line
-	if match_line_curve_mode: current_position = match_line.get_point_position(LINE_COUNT_MATCH*3)
-	else: current_position = match_line.get_point_position(LINE_COUNT_MATCH)
-	draw_line_match.add_point(Vector2(current_position+POSITION_OFFSET_MATCH))
+	if match_line_curve_mode: current_position = match_line.get_point_position(line_count_match*3)
+	else: current_position = match_line.get_point_position(line_count_match)
+	draw_line_match.add_point(Vector2(current_position+position_offset_match))
 	
 	# color the match draw line
 	draw_line_match.gradient = Gradient.new()
