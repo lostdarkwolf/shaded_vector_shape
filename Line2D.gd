@@ -151,14 +151,14 @@ func _draw():
 	draw_line_main.width_curve = Curve.new()
 	draw_line_main.width=max(line_main_width_start, line_main_width_end)
 	if line_main_width_start>line_main_width_end:
-		if line_main_width_start!=0: # no need for "and main_line.visible == true" because _draw() would stop if it were false.
+		if line_main_width_start!=0: # no need for "and visible == true" because _draw() would stop if it were false.
 			draw_line_main.width_curve.add_point(Vector2(0,1),0,0,0,0)
 			draw_line_main.width_curve.add_point(Vector2(1,line_main_width_end/line_main_width_start),0,0,0,0)
 		else:
 			draw_line_main.width_curve.add_point(Vector2(0,0),0,0,0,0)
 			draw_line_main.width_curve.add_point(Vector2(1,0),0,0,0,0)
 	else:
-		if line_main_width_start!=0: # no need for "and main_line.visible == true" because _draw() would stop if it were false.
+		if line_main_width_start!=0: # no need for "and visible == true" because _draw() would stop if it were false.
 			draw_line_main.width_curve.add_point(Vector2(0,line_main_width_start/line_main_width_end),0,0,0,0)
 			draw_line_main.width_curve.add_point(Vector2(1,1),0,0,0,0)
 		else:
