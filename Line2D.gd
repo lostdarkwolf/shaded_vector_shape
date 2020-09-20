@@ -80,10 +80,7 @@ func _ready():
 
 func _draw():
 	add_child(draw_line_main)
-	draw_line_main.set_owner(self)
-	
 	add_child(draw_line_match)
-	draw_line_match.set_owner(self)
 	
 	while t<1-T_SEGMENT:
 		# reset primitive data
